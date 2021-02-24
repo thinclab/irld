@@ -353,8 +353,7 @@ int main() {
     			string percept = buf[0..buf.countUntil(";")];
     			buf = buf[buf.countUntil(";") + 1 .. buf.length];
     			
-    			string state; 
-				
+    			string state;
     			string action;
     			double p;
     			
