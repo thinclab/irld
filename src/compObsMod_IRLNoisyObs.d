@@ -207,7 +207,7 @@ int main() {
 	double Ephi_thresh = 0.1;
 	// number of samples of trajectories needed to approximate the traj-space for computing Ephi
 	int nSamplesTrajSpace = 2000;
-	int max_iter_lbfgs = 10000; 
+	int max_iter_lbfgs = 5; 
 	double error_lbfgs = .00001;
 	int linesearch_algo = 0;
 
@@ -236,7 +236,7 @@ int main() {
 	double error = 1.0e-1, double solverError = 1.0e-1, double Qsolve_qval_thresh = 1.0e-2,
 	ulong QSolve_max_iter = 100LU, int max_iter_lbfgs = 100, double error_lbfgs = 1.0e-5)	
 	*/
-	bool use_frequentist_baseline = true;
+	bool use_frequentist_baseline = false;
 
 	MaxEntUnknownObsModRobustIRL robustIRLUknowObsMod = new MaxEntUnknownObsModRobustIRL(restart_attempts, 
 		new TimedValueIteration(int.max, false, vi_duration_thresh_secs), model.S(), 
@@ -378,13 +378,13 @@ int main() {
 	/////////////////////////////////////////////// 
 	writeln("\n\n\n\n writing results to noisyObsRobustSamplingMeirl_LBA_data \n\n\n\n ");
 	
-	File file1 = File("/home/psuresh/Downloads/noisyObsRobustSamplingMeirl_LBA_data.csv", "a"); 
+	File file1 = File("/home/saurabharora/Downloads/noisyObsRobustSamplingMeirl_LBA_data.csv", "a"); 
 	string str_arr_LBA = to!string(arr_LBA);
 	str_arr_LBA = str_arr_LBA[1 .. (str_arr_LBA.length-1)];
 	file1.writeln(str_arr_LBA);
 	file1.close(); 
 
-	File file2 = File("/home/psuresh/Downloads/noisyObsRobustSamplingMeirl_EVD_data.csv", "a"); 
+	File file2 = File("/home/saurabharora/Downloads/noisyObsRobustSamplingMeirl_EVD_data.csv", "a"); 
 	string str_arr_EVD = to!string(arr_EVD);
 	str_arr_EVD = str_arr_EVD[1 .. (str_arr_EVD.length-1)];
 	file2.writeln(str_arr_EVD);

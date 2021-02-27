@@ -92,12 +92,12 @@ int main() {
 	bool useHierDistr = 1;	
 	// decide what values of features will help lbfgs dsitinguish events
 	bool lbfgs_use_ones = 0;
-	int num_sessions = 10;
+	int num_sessions = 5;
 	int num_trials_perSession = 1;
 	bool allGTdata = 0;
 	int num_runs = 100;
 	double[][] arr_metric1data, arr_metric3data;
-	bool use_frequentist_baseline = false;
+	bool use_frequentist_baseline = true;
 
 	foreach(i;0..num_runs) {
 		double [] learnedDistrFeat = simulateNoisyDemo_Incremental_ObsModLearning(model, 

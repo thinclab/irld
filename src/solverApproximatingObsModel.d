@@ -115,9 +115,15 @@ public double [] simulateNoisyDemo_Incremental_ObsModLearning(Model model, State
 	double VI_threshold = 0.1; 
 	// time bound for value iteration
 	int vi_duration_thresh_secs = 30; 
-	int max_iter_lbfgs = 1000000; 
+	// int max_iter_lbfgs = 1000000; 
+	// int max_iter_lbfgs = 1; 
+	// int max_iter_lbfgs = 2; 
+	int max_iter_lbfgs = 5; 
 	double error_lbfgs = 0.00001;
 	int linesearch_algo = 0;
+	// int linesearch_algo = 1;
+	// int linesearch_algo = 2;
+	// int linesearch_algo = 3;
 
 	/*
 		this(int max_iter, MDPSolver solver, State [] observableStates, int n_samples=500, 
@@ -355,18 +361,6 @@ public double [] avg_singleSession_obsModelLearning(MaxEntUnknownObsModRobustIRL
 		if (use_frequentist_baseline == true) learnedDistr_obsfeatures = estimateObsMod.frequentistEstimateDistrObsModelFeatures(model, obs_trajs, useHierDistr);
 		else learnedDistr_obsfeatures = estimateObsMod.learnDistrObsModelFeatures(model, obs_trajs, opt_val_Obj, lbfgs_use_ones, useHierDistr);
 
-		if (useHierDistr==1) {
-			foreach (i; 0..(learnedDistr_obsfeatures.length/2)) {
-				// separately for each tau and taubar
-				learnedDistr_obsfeatures[i] = learnedDistr_obsfeatures[i]/(learnedDistr_obsfeatures[i]
-					+learnedDistr_obsfeatures[i+model.getNumObFeatures()]);
-				learnedDistr_obsfeatures[i+model.getNumObFeatures()] = learnedDistr_obsfeatures[i]/(learnedDistr_obsfeatures[i]
-					+learnedDistr_obsfeatures[i+model.getNumObFeatures()]);
-			}
-		} else {
-			learnedDistr_obsfeatures[] = learnedDistr_obsfeatures[]/sum(learnedDistr_obsfeatures);
-		}
-
 		// update the incrementally learned feature distribution 
 		// local substitute variable for incremental runing average
 		double [] temp_runAvg_learnedDistr_obsfeatures = new double[learnedDistr_obsfeatures.length];
@@ -375,6 +369,27 @@ public double [] avg_singleSession_obsModelLearning(MaxEntUnknownObsModRobustIRL
 
 		temp_runAvg_learnedDistr_obsfeatures[] = (runAvg_learnedDistr_obsfeatures[]*(numSessionsSoFar-1) + learnedDistr_obsfeatures[]);
 		temp_runAvg_learnedDistr_obsfeatures[] /= numSessionsSoFar; 
+
+		// normalization should happen after running average 
+		if (useHierDistr==1) {
+			foreach (i; 0..(temp_runAvg_learnedDistr_obsfeatures.length/2)) {
+				debug {
+					// writeln("\n Q before normalizing ",temp_runAvg_learnedDistr_obsfeatures[i]," ",temp_runAvg_learnedDistr_obsfeatures[i+model.getNumObFeatures()]);
+				}
+				// separately for each tau and taubar
+				double p_psi = temp_runAvg_learnedDistr_obsfeatures[i]/(temp_runAvg_learnedDistr_obsfeatures[i]
+					+temp_runAvg_learnedDistr_obsfeatures[i+model.getNumObFeatures()]);
+				double p_psi_bar = temp_runAvg_learnedDistr_obsfeatures[i+model.getNumObFeatures()]/(temp_runAvg_learnedDistr_obsfeatures[i]
+					+temp_runAvg_learnedDistr_obsfeatures[i+model.getNumObFeatures()]);
+				temp_runAvg_learnedDistr_obsfeatures[i] = p_psi;
+				temp_runAvg_learnedDistr_obsfeatures[i+model.getNumObFeatures()] = p_psi_bar;
+				debug {
+					// writeln("\n Q after normalizing ",temp_runAvg_learnedDistr_obsfeatures[i]," ",temp_runAvg_learnedDistr_obsfeatures[i+model.getNumObFeatures()]);
+				}
+			}
+		} else {
+			temp_runAvg_learnedDistr_obsfeatures[] = temp_runAvg_learnedDistr_obsfeatures[]/sum(temp_runAvg_learnedDistr_obsfeatures);
+		}
 
 		// for averaging over trials within session
 		arr_learnedDistr_obsfeatures ~= temp_runAvg_learnedDistr_obsfeatures;
@@ -391,20 +406,34 @@ public double [] avg_singleSession_obsModelLearning(MaxEntUnknownObsModRobustIRL
 		foreach (i; 0 .. model.getNumObFeatures()) {
 
 			if (useHierDistr == 1) {
-				tempdiff1 ~= trueDistr_obsfeatures[i]; 
-				tempdiff1 ~= trueDistr_obsfeatures[i+model.getNumObFeatures()]; 
-				tempdiff2 ~= temp_runAvg_learnedDistr_obsfeatures[i]; 
-				tempdiff2 ~= temp_runAvg_learnedDistr_obsfeatures[i+model.getNumObFeatures()]; 
+				// Using KL Divergence
+				double [] P = new double[2];
+				P[0] = trueDistr_obsfeatures[i];
+				P[1] = trueDistr_obsfeatures[i+model.getNumObFeatures()];
+				double [] Q = new double[2];
+				Q[0] = temp_runAvg_learnedDistr_obsfeatures[i];
+				Q[1] = temp_runAvg_learnedDistr_obsfeatures[i+model.getNumObFeatures()];
+				diff1 = KL_divergence(P,Q);
+				debug {
+					writeln("\n P ",P,"\n Q ",Q,"\n KLD ",diff1);
+				}
 
-				tempdiff1[] = tempdiff1[]-tempdiff2[];
-				diff1 = l1norm(tempdiff1)/2; 
-				tempdiff1.length = 0; 
-				tempdiff2.length = 0; 
+				// Using Euclidean Distance
+				// tempdiff1 ~= trueDistr_obsfeatures[i]; 
+				// tempdiff1 ~= trueDistr_obsfeatures[i+model.getNumObFeatures()]; 
+				// tempdiff2 ~= temp_runAvg_learnedDistr_obsfeatures[i]; 
+				// tempdiff2 ~= temp_runAvg_learnedDistr_obsfeatures[i+model.getNumObFeatures()]; 
+				// tempdiff1[] = tempdiff1[]-tempdiff2[];
+				// diff1 = l1norm(tempdiff1)/2; 
+				// tempdiff1.length = 0; 
+				// tempdiff2.length = 0; 
+
 			} else {
 				if (lbfgs_use_ones) diff1 = trueDistr_obsfeatures[i]-temp_runAvg_learnedDistr_obsfeatures[i]; 
 				else diff1 = trueDistr_obsfeatures[i+model.getNumObFeatures()]
 					-temp_runAvg_learnedDistr_obsfeatures[i+model.getNumObFeatures()]; 
 			}
+
 			cum_diff1 += diff1;
 			//writeln(diff1,"  ",cum_diff1);
 
@@ -510,6 +539,15 @@ public double [] avg_singleSession_obsModelLearning(MaxEntUnknownObsModRobustIRL
 	}
 
 	return learnedDistr_obsfeatures;
+}
+
+double KL_divergence(double [] P, double [] Q) {
+	double sum = 0.0;
+	foreach (i; 0..P.length)
+	{
+		sum += P[i]*log(P[i]/Q[i]);
+	}
+	return sum;
 }
 
 string feature_vector_to_string(int [] features) {
