@@ -117,10 +117,14 @@ int main() {
     formattedRead(buf, "%s", &numSessionsSoFar);    
 
 	// learned distribution incrementally averaged over sessions 
-	double [] runAvg_learnedDistr_obsfeatures;
+	double [] runAvg_learnedDistr_obsfeatures, runAvg_learnedDistr_obsfeatures2;
 	if (useHierDistr == 1) runAvg_learnedDistr_obsfeatures = new double[2*model.getNumObFeatures()]; 
 	else runAvg_learnedDistr_obsfeatures = new double[model.getNumObFeatures()]; 
 	runAvg_learnedDistr_obsfeatures[] = 0.0;
+	if (useHierDistr == 1) runAvg_learnedDistr_obsfeatures2 = new double[2*model.getNumObFeatures()]; 
+	else runAvg_learnedDistr_obsfeatures2 = new double[model.getNumObFeatures()]; 
+	runAvg_learnedDistr_obsfeatures2[] = 0.0;
+
     buf = readln();
     formattedRead(buf, "[%s]", &st);
     for (int j = 0; j < numObFeatures-1; j++) {
@@ -374,7 +378,7 @@ int main() {
     trueDistr_obsfeatures, GT_trajs,
     obs_trajs, trueObsMod, numSessionsSoFar,  runAvg_learnedDistr_obsfeatures,
     avg_cum_diff1, avg_cum_diff2, lbfgs_use_ones, 
-    all_sa_pairs, avg_cum_diff3, useHierDistr, use_frequentist_baseline);
+    all_sa_pairs, avg_cum_diff3, useHierDistr, use_frequentist_baseline, runAvg_learnedDistr_obsfeatures2);
 
     // updating global variable for runing average
     runAvg_learnedDistr_obsfeatures[] = (runAvg_learnedDistr_obsfeatures[]*(numSessionsSoFar-1) + learnedDistr_obsfeatures[]);

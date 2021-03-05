@@ -16,6 +16,7 @@ import solverApproximatingObsModel;
 
 import irl;
 import std.datetime; 
+import core.time;
 
 int main() {
 	debug {
@@ -90,8 +91,8 @@ int main() {
 
 	debug {
 		writeln("starting "); 
-	    auto starttime = Clock.currTime();
 	} 
+	auto starttime = Clock.currTime();
 
 	// number of trajectories input in one session 
 	int num_trajs = 1;
@@ -169,10 +170,14 @@ int main() {
 	else learnedDistr_obsfeatures = new double[model.getNumObFeatures()]; 
 
 	// learned distribution incrementally averaged over sessions 
-	double [] runAvg_learnedDistr_obsfeatures;
+	double [] runAvg_learnedDistr_obsfeatures, runAvg_learnedDistr_obsfeatures2;
 	if (useHierDistr == 1) runAvg_learnedDistr_obsfeatures = new double[2*model.getNumObFeatures()]; 
 	else runAvg_learnedDistr_obsfeatures = new double[model.getNumObFeatures()]; 
 	runAvg_learnedDistr_obsfeatures[] = 0.0;
+	if (useHierDistr == 1) runAvg_learnedDistr_obsfeatures2 = new double[2*model.getNumObFeatures()]; 
+	else runAvg_learnedDistr_obsfeatures2 = new double[model.getNumObFeatures()]; 
+	runAvg_learnedDistr_obsfeatures2[] = 0.0;
+
 	double numSessionsSoFar = 0.0;
 
 	// number of trajs seen so far by learner
@@ -236,7 +241,7 @@ int main() {
 	double error = 1.0e-1, double solverError = 1.0e-1, double Qsolve_qval_thresh = 1.0e-2,
 	ulong QSolve_max_iter = 100LU, int max_iter_lbfgs = 100, double error_lbfgs = 1.0e-5)	
 	*/
-	bool use_frequentist_baseline = false;
+	bool use_frequentist_baseline = true;
 
 	MaxEntUnknownObsModRobustIRL robustIRLUknowObsMod = new MaxEntUnknownObsModRobustIRL(restart_attempts, 
 		new TimedValueIteration(int.max, false, vi_duration_thresh_secs), model.S(), 
@@ -298,11 +303,12 @@ int main() {
 		obs_trajs, trueObsMod, numSessionsSoFar,  runAvg_learnedDistr_obsfeatures,
 		avg_cum_diff1, avg_cum_diff2, lbfgs_use_ones, 
 		all_sa_pairs, avg_cum_diff3, useHierDistr,
-		use_frequentist_baseline);
+		use_frequentist_baseline, runAvg_learnedDistr_obsfeatures2);
 
+		runAvg_learnedDistr_obsfeatures[] = learnedDistr_obsfeatures[];
 		// updating global variable for runing average
-		runAvg_learnedDistr_obsfeatures[] = (runAvg_learnedDistr_obsfeatures[]*(numSessionsSoFar-1) + learnedDistr_obsfeatures[]);
-		runAvg_learnedDistr_obsfeatures[] /= numSessionsSoFar; 
+		// runAvg_learnedDistr_obsfeatures[] = (runAvg_learnedDistr_obsfeatures[]*(numSessionsSoFar-1) + learnedDistr_obsfeatures[]);
+		// runAvg_learnedDistr_obsfeatures[] /= numSessionsSoFar; 
 		double[StateAction][StateAction] obsModel = createObsModel(model, runAvg_learnedDistr_obsfeatures, lbfgs_use_ones, useHierDistr); 
 		model.setObsMod(obsModel);	
 
@@ -374,8 +380,10 @@ int main() {
         writeln("\n EVD",EVD);
 		arr_EVD ~= EVD;
 	}
+
 	
 	/////////////////////////////////////////////// 
+
 	writeln("\n\n\n\n writing results to noisyObsRobustSamplingMeirl_LBA_data \n\n\n\n ");
 	
 	File file1 = File("/home/saurabharora/Downloads/noisyObsRobustSamplingMeirl_LBA_data.csv", "a"); 
@@ -389,6 +397,7 @@ int main() {
 	str_arr_EVD = str_arr_EVD[1 .. (str_arr_EVD.length-1)];
 	file2.writeln(str_arr_EVD);
 	file2.close(); 
+
 
 	writeln("BEGPARSING");	
 	foreach (State s; model.S()) {
@@ -437,10 +446,26 @@ int main() {
 
 	writeln("ENDPARSING");
 
+	auto endttime = Clock.currTime();
+	auto duration = endttime - starttime;
+	writeln("Runtime Duration ==> ", duration);
+	writeln(duration);
+	double dur = 60*(endttime.minute-starttime.minute)+
+		(endttime.second-starttime.second)+
+		0.001*(endttime.fracSec.msecs-starttime.fracSec.msecs);
+	writeln(dur);
+	// exit(0);
+	
+	File fileTime = File("/home/saurabharora/Downloads/noisyObsRobustSamplingMeirl_InfTimeAllSessions_data.csv", "a"); 
+	// string str_starttime = to!string(starttime);
+	// fileTime.writeln(str_starttime);
+	// string str_endttime = to!string(endttime);
+	// fileTime.writeln(str_endttime);
+	string str_duration = to!string(dur);
+	fileTime.writeln(str_duration);
+	fileTime.close(); 
+	
 	debug {
-	    auto endttime = Clock.currTime();
-	    auto duration = endttime - starttime;
-	    writeln("Runtime Duration ==> ", duration);
 	}
 	
 	delete reward_weights;
