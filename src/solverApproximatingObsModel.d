@@ -94,11 +94,14 @@ public double [] simulateNoisyDemo_Incremental_ObsModLearning(Model model, State
 	else learnedDistr_obsfeatures = new double[model.getNumObFeatures()]; 
 
 	// learned distribution incrementally averaged over sessions 
-	double [] runAvg_learnedDistr_obsfeatures;
+	double [] runAvg_learnedDistr_obsfeatures, runAvg_learnedDistr_obsfeatures2;
 	if (useHierDistr == 1) runAvg_learnedDistr_obsfeatures = new double[2*model.getNumObFeatures()]; 
 	else runAvg_learnedDistr_obsfeatures = new double[model.getNumObFeatures()]; 
-
 	runAvg_learnedDistr_obsfeatures[] = 0.0;
+	if (useHierDistr == 1) runAvg_learnedDistr_obsfeatures2 = new double[2*model.getNumObFeatures()]; 
+	else runAvg_learnedDistr_obsfeatures2 = new double[model.getNumObFeatures()]; 
+	runAvg_learnedDistr_obsfeatures2[] = 0.0;
+
 	double numSessionsSoFar = 0.0;
 	// arrays of error values for all metrics 
 	double [] arr_avg_cum_diff1, arr_avg_cum_diff2, arr_avg_cum_diff3;
@@ -195,7 +198,7 @@ public double [] simulateNoisyDemo_Incremental_ObsModLearning(Model model, State
 		obs_trajs, trueObsMod, numSessionsSoFar,  runAvg_learnedDistr_obsfeatures,
 		avg_cum_diff1, avg_cum_diff2, lbfgs_use_ones, 
 		all_sa_pairs, avg_cum_diff3, useHierDistr,
-		use_frequentist_baseline);
+		use_frequentist_baseline,  runAvg_learnedDistr_obsfeatures2);
 
 
 		arr_avg_cum_diff1 ~= avg_cum_diff1; 
@@ -205,15 +208,18 @@ public double [] simulateNoisyDemo_Incremental_ObsModLearning(Model model, State
 
 		///////////////////////////////////////// Session Finished /////////////////////////////////////////////
 
+		runAvg_learnedDistr_obsfeatures[] = learnedDistr_obsfeatures[];
 		// updating global variable for runing average
-		runAvg_learnedDistr_obsfeatures[] = (runAvg_learnedDistr_obsfeatures[]*(numSessionsSoFar-1) + learnedDistr_obsfeatures[]);
-		runAvg_learnedDistr_obsfeatures[] /= numSessionsSoFar; 
+		// runAvg_learnedDistr_obsfeatures[] = (runAvg_learnedDistr_obsfeatures[]*(numSessionsSoFar-1) + learnedDistr_obsfeatures[]);
+		// runAvg_learnedDistr_obsfeatures[] /= numSessionsSoFar; 
 
 	}
 
 	//writeln(arr_avg_cum_diff1, arr_avg_cum_diff2, arr_avg_cum_diff3); 
 	//writeln(runAvg_learnedDistr_obsfeatures); 
-
+	debug{
+		// writeln("writing ",arr_avg_cum_diff1," to resultsApproxObsModelMetric1 ");
+	}
 	File file1 = File("/home/saurabharora/Downloads/resultsApproxObsModelMetric1.csv", "a"); 
 	string str_arr_avg_cum_diff1 = to!string(arr_avg_cum_diff1);
 	str_arr_avg_cum_diff1 = str_arr_avg_cum_diff1[1 .. (str_arr_avg_cum_diff1.length-1)];
@@ -340,9 +346,8 @@ public double [] avg_singleSession_obsModelLearning(MaxEntUnknownObsModRobustIRL
 	ref double numSessionsSoFar, ref double [] runAvg_learnedDistr_obsfeatures, 
 	ref double avg_cum_diff1, ref double avg_cum_diff2, 
 	bool lbfgs_use_ones, StateAction[] all_sa_pairs, ref double avg_cum_diff3,
-	bool useHierDistr, bool use_frequentist_baseline) {
-		//////// For average over 10 runs with same trueObsFeatDistr and observations /////// 
-
+	bool useHierDistr, bool use_frequentist_baseline, ref double [] runAvg_learnedDistr_obsfeatures2) {
+	//////// For average over 10 runs with same trueObsFeatDistr and observations /////// 
 	
 	writeln("numSessionsSoFar ",numSessionsSoFar);
 	double [] arr_cum_diff1, arr_cum_diff2, arr_cum_diff3;
@@ -358,8 +363,13 @@ public double [] avg_singleSession_obsModelLearning(MaxEntUnknownObsModRobustIRL
 
 	foreach(tr; 0..num_trials_perSession) {
 
-		if (use_frequentist_baseline == true) learnedDistr_obsfeatures = estimateObsMod.frequentistEstimateDistrObsModelFeatures(model, obs_trajs, useHierDistr);
-		else learnedDistr_obsfeatures = estimateObsMod.learnDistrObsModelFeatures(model, obs_trajs, opt_val_Obj, lbfgs_use_ones, useHierDistr);
+		if (use_frequentist_baseline == true) {
+			learnedDistr_obsfeatures = estimateObsMod.frequentistEstimateDistrObsModelFeatures(model, obs_trajs, useHierDistr);
+			// learnedDistr_obsfeatures2 = estimateObsMod.learnDistrObsModelFeatures(model, obs_trajs, opt_val_Obj, lbfgs_use_ones, useHierDistr); 
+		} else {
+			learnedDistr_obsfeatures = estimateObsMod.learnDistrObsModelFeatures(model, obs_trajs, opt_val_Obj, lbfgs_use_ones, useHierDistr);
+			// learnedDistr_obsfeatures2 = estimateObsMod.frequentistEstimateDistrObsModelFeatures(model, obs_trajs, useHierDistr);
+		}
 
 		// update the incrementally learned feature distribution 
 		// local substitute variable for incremental runing average
@@ -367,6 +377,7 @@ public double [] avg_singleSession_obsModelLearning(MaxEntUnknownObsModRobustIRL
 		//writeln("runAvg_learnedDistr_obsfeatures ",runAvg_learnedDistr_obsfeatures);
 		//writeln("numSessionsSoFar ",numSessionsSoFar);
 
+		// Updating the running average 
 		temp_runAvg_learnedDistr_obsfeatures[] = (runAvg_learnedDistr_obsfeatures[]*(numSessionsSoFar-1) + learnedDistr_obsfeatures[]);
 		temp_runAvg_learnedDistr_obsfeatures[] /= numSessionsSoFar; 
 
@@ -415,7 +426,7 @@ public double [] avg_singleSession_obsModelLearning(MaxEntUnknownObsModRobustIRL
 				Q[1] = temp_runAvg_learnedDistr_obsfeatures[i+model.getNumObFeatures()];
 				diff1 = KL_divergence(P,Q);
 				debug {
-					writeln("\n P ",P,"\n Q ",Q,"\n KLD ",diff1);
+					// writeln("\n P ",P,"\n Q ",Q,"\n KLD ",diff1);
 				}
 
 				// Using Euclidean Distance
@@ -536,7 +547,50 @@ public double [] avg_singleSession_obsModelLearning(MaxEntUnknownObsModRobustIRL
 	// average learned distribution from trials within session 
 	foreach(i; 0 .. arr_learnedDistr_obsfeatures[0].length ) {
 		learnedDistr_obsfeatures[i] = sum(arr_learnedDistr_obsfeatures.transversal(i))/cast(double)(arr_learnedDistr_obsfeatures.length);
-	}
+	} 
+
+	// Recording diff w.r.t. baseline
+	double [] learnedDistr_obsfeatures2, temp_runAvg_learnedDistr_obsfeatures2;
+	File fileLearnedDistrDiff = File("/home/saurabharora/Downloads/resultsLearnedDistrCurrentSession.csv", "a"); 
+	if (use_frequentist_baseline == true) { 
+		learnedDistr_obsfeatures2 = estimateObsMod.learnDistrObsModelFeatures(model, obs_trajs, opt_val_Obj, lbfgs_use_ones, useHierDistr); 
+	} else { 
+		learnedDistr_obsfeatures2 = estimateObsMod.frequentistEstimateDistrObsModelFeatures(model, obs_trajs, useHierDistr);
+	} 
+	temp_runAvg_learnedDistr_obsfeatures2.length = learnedDistr_obsfeatures2.length;
+	temp_runAvg_learnedDistr_obsfeatures2[] = (runAvg_learnedDistr_obsfeatures2[]*(numSessionsSoFar-1) + learnedDistr_obsfeatures2[]);
+	temp_runAvg_learnedDistr_obsfeatures2[] /= numSessionsSoFar; 
+	runAvg_learnedDistr_obsfeatures2[] = temp_runAvg_learnedDistr_obsfeatures2[];
+	double diff4, cum_diff4;
+	cum_diff4 = 0.0;
+	foreach (i; 0 .. model.getNumObFeatures()) {
+
+		if (useHierDistr == 1) {
+			// Using KL Divergence
+			double [] P = new double[2];
+			P[0] = learnedDistr_obsfeatures[i];
+			P[1] = learnedDistr_obsfeatures[i+model.getNumObFeatures()];
+			double [] Q = new double[2];
+			Q[0] = runAvg_learnedDistr_obsfeatures2[i];
+			Q[1] = runAvg_learnedDistr_obsfeatures2[i+model.getNumObFeatures()];
+			diff4 = KL_divergence(P,Q);
+			debug {
+				// writeln("\n P ",P,"\n Q ",Q,"\n KLD ",diff1);
+			}
+
+		} else {
+			if (lbfgs_use_ones) diff4 = learnedDistr_obsfeatures[i]-runAvg_learnedDistr_obsfeatures2[i]; 
+			else diff4 = learnedDistr_obsfeatures[i+model.getNumObFeatures()]
+				-runAvg_learnedDistr_obsfeatures2[i+model.getNumObFeatures()]; 
+		}
+		cum_diff4 += diff4;
+	} 
+	cum_diff4 = cum_diff4/cast(double)model.getNumObFeatures();
+
+	if (numSessionsSoFar==0) fileLearnedDistrDiff.writeln("\n I2RL starts here \n");
+	string stDiffDistrMethod1Method2 = to!string(cum_diff4);
+	fileLearnedDistrDiff.writeln(stDiffDistrMethod1Method2);
+	fileLearnedDistrDiff.close(); 
 
 	return learnedDistr_obsfeatures;
 }
@@ -790,7 +844,7 @@ class MaxEntUnknownObsModRobustIRL : MaxEntIrlZiebartApproxNoisyObs {
 			if (useHierDistr==1) returnDistr[i+model.getNumObFeatures()] = 1-returnDistr[i];
 		}
 		debug {
-			writeln("frequentistEstimateDistrObsModelFeatures ",returnDistr);
+			// writeln("frequentistEstimateDistrObsModelFeatures ",returnDistr);
 		}
 		return returnDistr;
 	}
