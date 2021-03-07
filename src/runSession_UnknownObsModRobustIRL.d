@@ -131,6 +131,12 @@ int main() {
         formattedRead(st,"%s, ",&runAvg_learnedDistr_obsfeatures[j]);
     }
     formattedRead(st,"%s",&runAvg_learnedDistr_obsfeatures[numObFeatures-1]);
+    buf = readln();
+    formattedRead(buf, "[%s]", &st);
+    for (int j = 0; j < numObFeatures-1; j++) {
+        formattedRead(st,"%s, ",&runAvg_learnedDistr_obsfeatures2[j]);
+    }
+    formattedRead(st,"%s",&runAvg_learnedDistr_obsfeatures2[numObFeatures-1]);
 
 	////////////////////////////// Setting Up Parameters/////////////////////////////////////////////
 
@@ -214,7 +220,7 @@ int main() {
 	sac [] obs_traj;
 	// number of trajectories input in one session 
 	int num_trajs = 1;
-	int size_traj = 3;
+	int size_traj = 2;
 	int num_trials_perSession = 1;
 	// baseline when input is noise free
 	bool allGTdata = 0;
@@ -381,8 +387,9 @@ int main() {
     all_sa_pairs, avg_cum_diff3, useHierDistr, use_frequentist_baseline, runAvg_learnedDistr_obsfeatures2);
 
     // updating global variable for runing average
-    runAvg_learnedDistr_obsfeatures[] = (runAvg_learnedDistr_obsfeatures[]*(numSessionsSoFar-1) + learnedDistr_obsfeatures[]);
-    runAvg_learnedDistr_obsfeatures[] /= numSessionsSoFar; 
+    // runAvg_learnedDistr_obsfeatures[] = (runAvg_learnedDistr_obsfeatures[]*(numSessionsSoFar-1) + learnedDistr_obsfeatures[]);
+    // runAvg_learnedDistr_obsfeatures[] /= numSessionsSoFar; 
+	runAvg_learnedDistr_obsfeatures[] = learnedDistr_obsfeatures[]; 
     double[StateAction][StateAction] obsModel = createObsModel(model, runAvg_learnedDistr_obsfeatures, lbfgs_use_ones, useHierDistr); 
     model.setObsMod(obsModel);	
 
@@ -454,7 +461,8 @@ int main() {
     writeln("\n FE",featureExpecExpert,"ENDFE"); 
     writeln("\n NUMTR",num_Trajsofar,"ENDNUMTR"); 
     writeln("\n NUMSS",numSessionsSoFar,"ENDNUMSS"); 
-    writeln("\n RUNAVGPTAU",runAvg_learnedDistr_obsfeatures,"ENDRUNAVGPTAU"); 
+    writeln("\n RUNAVGPTAU",runAvg_learnedDistr_obsfeatures,"ENDRUNAVGPTAU\n"); 
+    writeln("\n RUNAVGPTAU2",runAvg_learnedDistr_obsfeatures2,"ENDRUNAVGPTAU2\n"); 
 
 	debug {
 		//writeln("\nSimulation for learned policy:");
@@ -486,6 +494,7 @@ int main() {
 	foreach (key, value; trueObsMod) trueObsMod.remove(key);
 	delete learnedDistr_obsfeatures;
 	delete runAvg_learnedDistr_obsfeatures;
+	delete runAvg_learnedDistr_obsfeatures2;
 	delete arr_LBA;
 	delete arr_EVD; 
 	delete lastWeights;
