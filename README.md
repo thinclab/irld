@@ -7,6 +7,11 @@ cd build
 cmake ../cmake-d
 sudo make install
 
+sudo apt-get gdc ("D compiler (language version 2), based on the GCC backend")
+  worked  
+delete compiler other than gdc. sudo apt-get purge dmd. 
+  
+
 In a new terminal:
 
 sudo rosdep init
