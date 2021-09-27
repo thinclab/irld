@@ -7,8 +7,8 @@ cd build
 cmake ../cmake-d
 sudo make install
 
-sudo apt-get gdc ("D compiler (language version 2), based on the GCC backend")
-  worked  
+sudo apt-get install gdc ("D compiler (language version 2), based on the GCC backend")
+  
 delete compiler other than gdc. sudo apt-get purge dmd. 
   
 
