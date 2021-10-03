@@ -988,8 +988,8 @@ public class ValueIteration : MDPSolver {
 				
 				double expected_rewards = 0;
 				foreach (s_prime, p; T){
-					//writeln("s,a,s_prime,p");
-					//writeln(s,a,s_prime,p);
+					writeln("s,a,s_prime,p");
+					writeln(s,a,s_prime,p);
 					expected_rewards += p*V[s_prime];
 				}
 				//writeln("q[a] = r");

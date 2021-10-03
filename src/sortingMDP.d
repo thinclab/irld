@@ -192,7 +192,7 @@ class sortingModel : mdp.Model {
         //sortingState next_st = cast(sortingState)(action.apply(state));
         State st = state;
         State next_st = action.apply(state);
-        if (! is_legal(st) || next_st.opEquals(st)) { 
+        if (! is_legal(next_st) || next_st.opEquals(st)) { 
             returnval[st] = 1.0;
         } else {
             returnval[next_st] = 1.0-this.p_fail;
@@ -259,6 +259,7 @@ class sortingModelbyPSuresh : sortingModel {
 			}
 		}
 
+		writeln("#states : ",states2.length);
 		this.states = states2;
 		
 	}

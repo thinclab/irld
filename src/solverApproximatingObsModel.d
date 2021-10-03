@@ -16,7 +16,7 @@ import std.conv;
 public double [] simulateNoisyDemo_Incremental_ObsModLearning(Model model, StateAction [] all_sa_pairs, Agent policy, 
 	double[State] initial, int num_trajs, int size_traj, bool useHierDistr, bool lbfgs_use_ones, 
 	int num_sessions, int num_trials_perSession, bool allGTdata, ref double[][] arr_metric1data, 
-	ref double[][] arr_metric3data, bool use_frequentist_baseline) {
+	ref double[][] arr_metric3data, bool use_frequentist_baseline, string base_dir) {
 
 	sar [][] GT_trajs;
 	sac [][] obs_trajs;
@@ -198,7 +198,7 @@ public double [] simulateNoisyDemo_Incremental_ObsModLearning(Model model, State
 		obs_trajs, trueObsMod, numSessionsSoFar,  runAvg_learnedDistr_obsfeatures,
 		avg_cum_diff1, avg_cum_diff2, lbfgs_use_ones, 
 		all_sa_pairs, avg_cum_diff3, useHierDistr,
-		use_frequentist_baseline,  runAvg_learnedDistr_obsfeatures2);
+		use_frequentist_baseline,  runAvg_learnedDistr_obsfeatures2, base_dir);
 
 
 		arr_avg_cum_diff1 ~= avg_cum_diff1; 
@@ -220,20 +220,20 @@ public double [] simulateNoisyDemo_Incremental_ObsModLearning(Model model, State
 	debug{
 		// writeln("writing ",arr_avg_cum_diff1," to resultsApproxObsModelMetric1 ");
 	}
-	File file1 = File("/home/saurabharora/Downloads/resultsApproxObsModelMetric1.csv", "a"); 
+	File file1 = File(base_dir~"resultsApproxObsModelMetric1.csv", "a"); 
 	string str_arr_avg_cum_diff1 = to!string(arr_avg_cum_diff1);
 	str_arr_avg_cum_diff1 = str_arr_avg_cum_diff1[1 .. (str_arr_avg_cum_diff1.length-1)];
 	file1.writeln(str_arr_avg_cum_diff1);
 	file1.close(); 
 	arr_metric1data ~= arr_avg_cum_diff1;
 
-	File file2 = File("/home/saurabharora/Downloads/resultsApproxObsModelMetric2.csv", "a"); 
+	File file2 = File(base_dir~"resultsApproxObsModelMetric2.csv", "a"); 
 	string str_arr_avg_cum_diff2 = to!string(arr_avg_cum_diff2);
 	str_arr_avg_cum_diff2 = str_arr_avg_cum_diff2[1 .. (str_arr_avg_cum_diff2.length-1)];
 	file2.writeln(str_arr_avg_cum_diff2);
 	file2.close(); 
 
-	File file3 = File("/home/saurabharora/Downloads/resultsApproxObsModelMetric3.csv", "a"); 
+	File file3 = File(base_dir~"resultsApproxObsModelMetric3.csv", "a"); 
 	string str_arr_avg_cum_diff3 = to!string(arr_avg_cum_diff3);
 	str_arr_avg_cum_diff3 = str_arr_avg_cum_diff3[1 .. (str_arr_avg_cum_diff3.length-1)];
 	file3.writeln(str_arr_avg_cum_diff3);
@@ -346,7 +346,8 @@ public double [] avg_singleSession_obsModelLearning(MaxEntUnknownObsModRobustIRL
 	ref double numSessionsSoFar, ref double [] runAvg_learnedDistr_obsfeatures, 
 	ref double avg_cum_diff1, ref double avg_cum_diff2, 
 	bool lbfgs_use_ones, StateAction[] all_sa_pairs, ref double avg_cum_diff3,
-	bool useHierDistr, bool use_frequentist_baseline, ref double [] runAvg_learnedDistr_obsfeatures2) {
+	bool useHierDistr, bool use_frequentist_baseline, ref double [] runAvg_learnedDistr_obsfeatures2,
+	string base_dir) {
 	//////// For average over 10 runs with same trueObsFeatDistr and observations /////// 
 	
 	writeln("numSessionsSoFar ",numSessionsSoFar);
@@ -551,7 +552,7 @@ public double [] avg_singleSession_obsModelLearning(MaxEntUnknownObsModRobustIRL
 
 	// Recording diff w.r.t. baseline
 	double [] learnedDistr_obsfeatures2, temp_runAvg_learnedDistr_obsfeatures2;
-	File fileLearnedDistrDiff = File("/home/psuresh/Downloads/resultsLearnedDistrCurrentSession.csv", "a"); 
+	File fileLearnedDistrDiff = File(base_dir~"resultsLearnedDistrCurrentSession.csv", "a"); 
 	if (use_frequentist_baseline == true) { 
 		learnedDistr_obsfeatures2 = estimateObsMod.learnDistrObsModelFeatures(model, obs_trajs, opt_val_Obj, lbfgs_use_ones, useHierDistr); 
 	} else { 

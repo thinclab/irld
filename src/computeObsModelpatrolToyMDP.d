@@ -202,7 +202,7 @@ int main() {
 
 	auto learnedDistrFeat = simulateNoisyDemo_Incremental_ObsModLearning(model, all_sa_pairs, policy, initial, num_trajs, 
 	size_traj, useHierDistr, lbfgs_use_ones, num_sessions, num_trials_perSession, allGTdata, arr_metric1data, 
-	arr_metric3data, use_frequentist_baseline);	
+	arr_metric3data, use_frequentist_baseline, "/home/katy/Desktop/Results_RI2RL/");	
 
 	//writeln("BEGPARSING");
 

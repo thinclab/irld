@@ -259,6 +259,7 @@ int main() {
 	double diff_wrt_muE_wo_sc;
 	double diff_wrt_muE_scores1;
 	double last_val;
+	string base_dir = "/home/katy/Desktop/Results_RI2RL/";
 
 	MaxEntUnknownObsModRobustIRL robustIRLUknowObsMod = new MaxEntUnknownObsModRobustIRL(restart_attempts, 
 		new TimedValueIteration(int.max, false, vi_duration_thresh_secs), model.S(), 
@@ -384,7 +385,8 @@ int main() {
     trueDistr_obsfeatures, GT_trajs,
     obs_trajs, trueObsMod, numSessionsSoFar,  runAvg_learnedDistr_obsfeatures,
     avg_cum_diff1, avg_cum_diff2, lbfgs_use_ones, 
-    all_sa_pairs, avg_cum_diff3, useHierDistr, use_frequentist_baseline, runAvg_learnedDistr_obsfeatures2);
+    all_sa_pairs, avg_cum_diff3, useHierDistr, use_frequentist_baseline, 
+	runAvg_learnedDistr_obsfeatures2, base_dir);
 
     // updating global variable for runing average
     // runAvg_learnedDistr_obsfeatures[] = (runAvg_learnedDistr_obsfeatures[]*(numSessionsSoFar-1) + learnedDistr_obsfeatures[]);

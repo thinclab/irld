@@ -1178,6 +1178,119 @@ class BoydModelWdObsFeatures : BoydModel {
 
 }
 
+class BoydModelWdObsFeaturesWOInpT : mdp.Model {
+
+	byte [][] map;
+	Action [] actions;
+	BoydState [] states;
+	State terminal;
+	int [] function(State, Action) ff;
+	int numFeatures;
+	double[State] uniform;
+	double p_fail;
+	
+	public this( State terminal, byte [][] themap, int numFeatures, int [] function(State, Action) ff, double p_fail) {
+		
+		this.terminal = terminal;
+		this.map = themap;
+		this.numFeatures = numFeatures;
+		this.ff = ff;
+		this.p_fail = p_fail;
+		
+		this.actions ~= new MoveForwardAction();
+		this.actions ~= new TurnLeftAction();
+		this.actions ~= new TurnRightAction();
+		this.actions ~= new StopAction();
+//		this.actions ~= new TurnAroundAction();
+
+		for (int i = 0; i < map.length; i ++) {
+			
+			for (int j = 0; j < map[i].length; j ++) {
+				if (map[i][j] == 1) {
+					states ~= new BoydState([i, j, 0]);
+					states ~= new BoydState([i, j, 1]);
+					states ~= new BoydState([i, j, 2]);
+					states ~= new BoydState([i, j, 3]);
+				}
+			}
+		}
+		
+		
+		foreach (s; states) {
+			uniform[s] = 1.0/states.length;
+		}
+		  
+	}
+	
+	public override double[State] T(State state, Action action) {
+		double[State] returnval;
+        //sortingState st = cast(sortingState)state;
+        //sortingState next_st = cast(sortingState)(action.apply(state));
+        State st = state;
+        State next_st = action.apply(state);
+        if (! is_legal(next_st) || next_st.opEquals(st)) { 
+            returnval[st] = 1.0;
+        } else {
+            returnval[next_st] = 1.0-this.p_fail;
+            returnval[st] = this.p_fail;
+        }
+
+		return returnval;
+	}
+
+	public override int numTFeatures() {
+		return numFeatures;
+	}
+		
+	public override int [] TFeatures(State state, Action action) {
+		return ff(state, action);
+	}
+	
+	public override State [] S () {
+		return cast(State[])states;
+	}
+	
+	public override Action[] A(State state = null) {
+		return actions;
+		
+	}
+	
+	public override bool is_terminal(State state) {
+
+		return state == terminal;
+	}
+	
+	public override bool is_legal(State state) {
+		BoydState s = cast(BoydState)state;
+		int [] l = s.location;
+		
+		return l[0] >= 0 && l[0] < map.length && l[1] >= 0 && l[1] < map[0].length && map[l[0]][l[1]] == 1; 
+	}
+
+	public override int [] obsFeatures(State state, Action action, State obState, Action obAction) {
+		int [] returnval;
+		return returnval;
+	}
+
+	public override void setNumObFeatures(int inpNumObFeatures){
+		return;
+	}
+
+	public override int getNumObFeatures(){
+		int returnval;
+		return returnval;
+	}
+
+	public override void setObsMod(double [StateAction][StateAction] newObsMod) {
+		return;
+	}
+
+	public override StateAction noiseIntroduction(State s, Action a) {
+		StateAction sa = new StateAction(s,a);
+		return sa;
+	}
+
+}
 
 class BoydExtendedModel : mdp.Model {
 

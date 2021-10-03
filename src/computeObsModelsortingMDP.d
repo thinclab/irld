@@ -104,7 +104,7 @@ int main() {
 			all_sa_pairs, policy, initial, num_trajs, 
 			size_traj, useHierDistr, lbfgs_use_ones, 
 			num_sessions, num_trials_perSession, allGTdata, 
-			arr_metric1data, arr_metric3data, use_frequentist_baseline); 
+			arr_metric1data, arr_metric3data, use_frequentist_baseline, "/home/katy/Desktop/Results_RI2RL/"); 
 		//double[StateAction][StateAction] obsModel = createObsModel(model, learnedDistrFeat, lbfgs_use_ones, useHierDistr); 
 		//model.setObsMod(obsModel);
 		writeln("\n\n\n a run finished \n\n\n");

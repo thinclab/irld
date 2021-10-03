@@ -1,3 +1,5 @@
+module compObsMod_IRLNoisyObs_patrolMDP;
+
 import sortingMDP;
 import mdp;
 import std.stdio;
@@ -27,6 +29,10 @@ int main() {
 	Model model;
 	double chanceNoise = 0.0;
 
+    // BoydModel model; 
+    map = boyd2PatrollerMap();
+    model = new BoydModel(null, map, T, 1, &simplefeatures);
+
     model = new sortingMDPWdObsFeatures(0.05,null, 0, chanceNoise);
     State ts = model.S()[0];
     auto features = model.obsFeatures(ts,model.A(ts)[0],ts,model.A(ts)[0]);
@@ -40,20 +46,25 @@ int main() {
 			all_sa_pairs ~= new StateAction(s,a);
 		}
 	}
-	// dim of reward model
-	int dim = 11;
-	reward = new sortingReward7(model,dim); 
-    double [] reward_weights = new double[dim];
-	reward_weights[] = 0;
 
-	// The new sorting MDP class is specific to pip behavior and therefore 
-	// have more relaxed transition dyanamics. That introduces more 
-	// options in state and action combinations for introducing noise.
-	double [] params_pip_sortingModelbyPSuresh4multipleInit_onlyPIP = [0.13986013986013984, 
-	0.13986013986013984, 0.13986013986013984, 0.13986013986013984, 0.013986013986013986, 
-	0.006993006993006993, 0.0, 0.2797202797202797, 0.0, 0.0, 0.2797202797202797];
-	reward_weights[] = params_pip_sortingModelbyPSuresh4multipleInit_onlyPIP[]; 
-	double[] trueWeights = reward_weights; 
+	// // dim of reward model
+	// int dim = 11;
+	// reward = new sortingReward7(model,dim); 
+    // double [] reward_weights = new double[dim];
+	// reward_weights[] = 0;
+	// // The new sorting MDP class is specific to pip behavior and therefore 
+	// // have more relaxed transition dyanamics. That introduces more 
+	// // options in state and action combinations for introducing noise.
+	// double [] params_pip_sortingModelbyPSuresh4multipleInit_onlyPIP = [0.13986013986013984, 
+	// 0.13986013986013984, 0.13986013986013984, 0.13986013986013984, 0.013986013986013986, 
+	// 0.006993006993006993, 0.0, 0.2797202797202797, 0.0, 0.0, 0.2797202797202797];
+	// reward_weights[] = params_pip_sortingModelbyPSuresh4multipleInit_onlyPIP[]; 
+	// double[] trueWeights = reward_weights; 
+
+	int dim = 6;
+    reward = new Boyd2RewardGroupedFeatures(model);
+    double [6] reward_weights = [1, 0, 0, 0, 0.75, 0];
+
 
     model.setReward(reward);
 	reward.setParams(reward_weights);
@@ -103,7 +114,7 @@ int main() {
 	// decide what values of features will help lbfgs dsitinguish events 
 	bool lbfgs_use_ones = 0;
 	// number of sessions of I2RL 
-	int num_sessions = 1;
+	int num_sessions = 5;
 	// number of attempts for each session whie averaging results
 	int num_trials_perSession = 1;
 	// baseline when input is noise free
@@ -386,7 +397,7 @@ int main() {
 	
 	/////////////////////////////////////////////// 
 
-	writeln("\n\n\n\n writing results to noisyObsRobustSamplingMeirl_LBA_data \n\n\n\n ",arr_LBA);
+	writeln("\n\n\n\n writing results to noisyObsRobustSamplingMeirl_LBA_data \n\n\n\n ");
 	File file1 = File(base_dir~"noisyObsRobustSamplingMeirl_LBA_data.csv", "a"); 
 	string str_arr_LBA = to!string(arr_LBA);
 	str_arr_LBA = str_arr_LBA[1 .. (str_arr_LBA.length-1)];
