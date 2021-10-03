@@ -5,7 +5,7 @@ import std.format;
 import std.math;
 import std.stdio;
 import std.string;
-
+import std.random;
 
 byte [][] boyd2PatrollerMap() {
 	return [[0, 1, 1, 1, 1, 1, 1, 1, 1], 
@@ -1077,6 +1077,11 @@ class BoydModel : mdp.Model {
 		return;
 	}
 
+	public override double [StateAction][StateAction] getObsMod() {
+		double [StateAction][StateAction] obsMod;
+		return obsMod;
+	}
+
 	public override StateAction noiseIntroduction(State s, Action a) {
 		StateAction sa = new StateAction(s,a);
 		return sa;
@@ -1151,6 +1156,10 @@ class BoydModelWdObsFeatures : BoydModel {
 		obsMod = newObsMod;
 	}
 
+	public override double [StateAction][StateAction] getObsMod() {
+		return this.obsMod;
+	}
+
 	override public StateAction noiseIntroduction(State s, Action a) {
 
 		State ss = s;
@@ -1188,8 +1197,14 @@ class BoydModelWdObsFeaturesWOInpT : mdp.Model {
 	int numFeatures;
 	double[State] uniform;
 	double p_fail;
+	// This class takes has as its member an observation feature function 
+	// for estimating observation model
+	int numObFeatures;
+	// observation model to be estimated 
+	double [StateAction][StateAction] obsMod;
+	double chanceNoise; 
 	
-	public this( State terminal, byte [][] themap, int numFeatures, int [] function(State, Action) ff, double p_fail) {
+	public this( State terminal, byte [][] themap, int numFeatures, int [] function(State, Action) ff, double p_fail, int inpNumObFeatures, double chanceNoise) {
 		
 		this.terminal = terminal;
 		this.map = themap;
@@ -1219,7 +1234,11 @@ class BoydModelWdObsFeaturesWOInpT : mdp.Model {
 		foreach (s; states) {
 			uniform[s] = 1.0/states.length;
 		}
-		  
+
+		// observation features
+		this.numObFeatures = inpNumObFeatures;
+		this.chanceNoise = chanceNoise;
+
 	}
 	
 	public override double[State] T(State state, Action action) {
@@ -1267,27 +1286,74 @@ class BoydModelWdObsFeaturesWOInpT : mdp.Model {
 		return l[0] >= 0 && l[0] < map.length && l[1] >= 0 && l[1] < map[0].length && map[l[0]][l[1]] == 1; 
 	}
 
-	public override int [] obsFeatures(State state, Action action, State obState, Action obAction) {
-		int [] returnval;
-		return returnval;
+	override public void setNumObFeatures(int inpNumObFeatures) {
+		this.numObFeatures = inpNumObFeatures;
 	}
 
-	public override void setNumObFeatures(int inpNumObFeatures){
-		return;
-	}
-
-	public override int getNumObFeatures(){
-		int returnval;
-		return returnval;
+	public override int getNumObFeatures() {
+		return numObFeatures;
 	}
 
 	public override void setObsMod(double [StateAction][StateAction] newObsMod) {
-		return;
+		this.obsMod = newObsMod;
 	}
 
-	public override StateAction noiseIntroduction(State s, Action a) {
-		StateAction sa = new StateAction(s,a);
-		return sa;
+	public override double [StateAction][StateAction] getObsMod() {
+		return this.obsMod;
+	}
+
+	public override int [] obsFeatures(State state, Action action, State obState, Action obAction) {
+		
+		//writeln(state," ", action, " ",  obState, " ",  obAction);
+		// location at y=0		
+		int [] result;
+		// This is where number of features is decided 
+		result.length = 4;
+		result[] = 0;
+
+		// ground truth and observation both had action moveforward
+		if (cast(MoveForwardAction)action && cast(MoveForwardAction)obAction) result[0] = 1;
+
+		// ground truth and observation both had action turn left
+		if (cast(TurnLeftAction)action && cast(TurnLeftAction)obAction)  result[1] = 1;
+
+		// ground truth and observation both had y=0
+		if ( ((cast(BoydState)state).getLocation()[1]==0) && ((cast(BoydState)obState).getLocation()[1]==0) ) result[2] = 1;
+
+		// ground truth and observation both had x=0
+		if ( ((cast(BoydState)state).getLocation()[0]==0) && ((cast(BoydState)obState).getLocation()[0]==0) ) result[3] = 1;
+
+		return result;
+
+	}
+
+	override public StateAction noiseIntroduction(State s, Action a) {
+
+		State ss = s;
+		Action aa = a;
+		auto insertNoise = dice(chanceNoise, 1-chanceNoise);
+
+		if (insertNoise) {
+			//// add meaningless noise: replace moveforward with turning ////
+
+			// single corrupted sa pair with one shared feature
+			//if (cast(MoveForwardAction)a && (cast(BoydState)s).getLocation()[1]==0) {
+			
+			// single corrupted sa pair with two shared features
+			//if (cast(MoveForwardAction)a && (cast(BoydState)s).getLocation()[1]==0
+			
+			// multiple corrupted sa pairs with two shared features
+			//	&& (cast(BoydState)s).getLocation()[0]==0) {
+			if ( cast(MoveForwardAction)a &&  ( (cast(BoydState)s).getLocation()[1]==0
+				|| (cast(BoydState)s).getLocation()[0]==0) ) {
+
+				// introduce faulty input
+				aa = new TurnLeftAction();
+				
+			}
+		}
+		return new StateAction(ss,aa);
+
 	}
 
 }
@@ -1593,6 +1659,11 @@ class BoydExtendedModel2 : mdp.Model {
 
 	public override void setObsMod(double [StateAction][StateAction] newObsMod) {
 		return;
+	}
+
+	public override double [StateAction][StateAction] getObsMod() {
+		double [StateAction][StateAction] obsMod;
+		return obsMod;
 	}
 
 	public override StateAction noiseIntroduction(State s, Action a) {

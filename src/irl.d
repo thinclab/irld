@@ -1434,6 +1434,9 @@ class MaxEntIrlZiebartApproxNoisyObs : MaxEntIrlZiebartApprox {
 					calc_feature_expectations_per_sac_trajectory_gibbsSampling(model, 
 					noisy_samples, temp_opt_weights.dup, conv_threshold_gibbs);
 				}
+				debug {
+					writeln("sampling for muE finished");
+				}
 
 		        foreach(traj_fe; feature_expectations_per_trajectory) {
 		        	// no division by size of dataset
@@ -1565,9 +1568,10 @@ class MaxEntIrlZiebartApproxNoisyObs : MaxEntIrlZiebartApprox {
 
 	double[][] calc_feature_expectations_per_sac_trajectory_gibbsSampling(Model model, 
 		sac[][] trajs, double[] weights, double conv_threshold_gibbs) {
+
 		// Robust IRL
 		debug {
-			//writeln("calc_feature_expectations_per_sac_trajectory_gibbsSampling ");
+			writeln("calc_feature_expectations_per_sac_trajectory_gibbsSampling ");
 		}
 
         LinearReward rw = cast(LinearReward)model.getReward();
@@ -1576,7 +1580,7 @@ class MaxEntIrlZiebartApproxNoisyObs : MaxEntIrlZiebartApprox {
 		Agent stochPolicy = CreateStochasticPolicyFromQValue(model, Q_value);
 		double[Action][State] stochPolicyMatrix = (cast(StochasticAgent)stochPolicy).getPolicy();
 		debug {
-			//writeln("stoch policy computed ");
+			writeln("stoch policy computed ");
 		}
 		// Unlike domain used by Shervin, our domain of observations is same as ground truths 		
 		// The transition probabilities P(sa|MB(sa)) are computed based on ground truths 
@@ -1606,7 +1610,7 @@ class MaxEntIrlZiebartApproxNoisyObs : MaxEntIrlZiebartApprox {
 		// 3) Compute new muE and relative diff
 
 		debug {
-			//writeln("MCMC started ");
+			writeln("MCMC started ");
 		}
 
 		double [] muE_sampled = new double[rw.dim()];
@@ -1631,8 +1635,8 @@ class MaxEntIrlZiebartApproxNoisyObs : MaxEntIrlZiebartApprox {
 			foreach(int i, sar[] traj; GT_trajs) {
 				obs_traj = trajs[i].dup;
 				debug {
-					//writeln("traj length ", traj.length);
-					//writeln("obs_traj length ", obs_traj.length);
+					// writeln("traj length ", traj.length);
+					// writeln("obs_traj length ", obs_traj.length);
 				}
 
 				foreach(int j, sar gt_sar; traj) {
@@ -1659,7 +1663,7 @@ class MaxEntIrlZiebartApproxNoisyObs : MaxEntIrlZiebartApprox {
 							} else P_s_prevs_preva = 0.0;
 
 							debug {
-								//writeln("P_s_prevs_preva ",P_s_prevs_preva); 
+								// writeln("P_s_prevs_preva ",P_s_prevs_preva); 
 							}
 
 							if (j==traj.length-1) {
@@ -1670,14 +1674,14 @@ class MaxEntIrlZiebartApproxNoisyObs : MaxEntIrlZiebartApprox {
 							} else P_nexts_s_a = 0.0;
 
 							debug {
-								//writeln("MCMC 3",new StateAction(s, a));
-								//writeln("(new StateAction(s, a)) in model.obsMod ",
-								//	(new StateAction(s, a)) in model.obsMod);
-								//writeln(new StateAction(e_sac.s,e_sac.a));
-								//writeln((new StateAction(e_sac.s,e_sac.a)) in model.obsMod[new StateAction(s, a)]);
+								// writeln("new StateAction(s, a) ",new StateAction(s, a));
+								// writeln("(new StateAction(s, a)) in model.getObsMod() ",
+								// 	(new StateAction(s, a)) in model.getObsMod());
+								// writeln(new StateAction(e_sac.s,e_sac.a));
+								// writeln((new StateAction(e_sac.s,e_sac.a)) in model.getObsMod()[new StateAction(s, a)]);
 							}
 
-							P_obssa_GTsa = model.obsMod[new StateAction(s, a)][new StateAction(e_sac.s,e_sac.a)];
+							P_obssa_GTsa = model.getObsMod()[new StateAction(s, a)][new StateAction(e_sac.s,e_sac.a)];
 
 							dict_gt_sa[new StateAction(s, a)] = P_s_prevs_preva 
 							* stochPolicyMatrix[s][a] * P_nexts_s_a * P_obssa_GTsa;
@@ -1725,18 +1729,18 @@ class MaxEntIrlZiebartApproxNoisyObs : MaxEntIrlZiebartApprox {
 			}
 
 			debug {
-				//writeln("\niter_count - ",iter_count,
-				//"cast(double)l1norm(last_muE_sampled) ", cast(double)l1norm(last_muE_sampled),
-				//"cast(double)l1norm(diff_muE_sampled) ",cast(double)l1norm(diff_muE_sampled),
-				//" perce_diff_wrt_last_muE_sampled ",perce_diff_wrt_last_muE_sampled);
+				// writeln("\niter_count - ",iter_count,
+				// "cast(double)l1norm(last_muE_sampled) ", cast(double)l1norm(last_muE_sampled),
+				// "cast(double)l1norm(diff_muE_sampled) ",cast(double)l1norm(diff_muE_sampled),
+				// " perce_diff_wrt_last_muE_sampled ",perce_diff_wrt_last_muE_sampled);
 			}
 			iter_count += 1;
 
 		}
-		//exit(0);
 
 		debug {
-			//writeln("MCMC finished ");
+			writeln("MCMC finished ");
+			exit(0);
 		}
 
 		return fe_per_gt_traj;

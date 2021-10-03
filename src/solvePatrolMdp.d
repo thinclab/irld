@@ -69,8 +69,10 @@ int main() {
 
 	    // BoydModel model; 
 		map = boyd2PatrollerMap();
+	    double p_fail = 0.05;
+		double chanceNoise = 0;
 		
-		model = new BoydModelWdObsFeaturesWOInpT(null, map, 1, &simplefeatures, 0.05);
+		model = new BoydModelWdObsFeaturesWOInpT(null, map, 1, &simplefeatures, p_fail, 0, chanceNoise);
 		// model = new BoydModel(null, map, T, 1, &simplefeatures);
 		//reward = new Boyd2RewardGroupedFeaturesTestMTIRL(model); 
 		reward = new Boyd2RewardGroupedFeatures(model);
@@ -98,6 +100,23 @@ int main() {
 		}
 	}
 	
+	debug {
+		double[State] initial;
+		foreach (s; model.S()) {
+			initial[s] = 1.0;
+		}
+		Distr!State.normalize(initial);
+
+		sar [] traj;
+		for(int i = 0; i < 2; i++) {
+			traj = simulate(model, a, initial, 50);
+			foreach (sar pair ; traj) {
+				writeln(pair.s, " ", pair.a, " ", pair.r);
+			}
+			writeln(" ");
+		}
+
+	}
 	 
 	return 0;	
 	

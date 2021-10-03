@@ -1,6 +1,6 @@
 module compObsMod_IRLNoisyObs_patrolMDP;
 
-import sortingMDP;
+import boydmdp;
 import mdp;
 import std.stdio;
 import std.random;
@@ -30,12 +30,19 @@ int main() {
 	double chanceNoise = 0.0;
 
     // BoydModel model; 
+    byte[][] map;
     map = boyd2PatrollerMap();
-    model = new BoydModel(null, map, T, 1, &simplefeatures);
+    double p_fail = 0.05;
+    model = new BoydModelWdObsFeaturesWOInpT(null, map, 1, &simplefeatures, p_fail, 0, chanceNoise);
 
-    model = new sortingMDPWdObsFeatures(0.05,null, 0, chanceNoise);
+    // model = new sortingMDPWdObsFeatures(0.05,null, 0, chanceNoise);
     State ts = model.S()[0];
     auto features = model.obsFeatures(ts,model.A(ts)[0],ts,model.A(ts)[0]);
+    debug{
+        writeln("testing features ",features);
+        // exit(0);
+    }
+
     int numObFeatures = cast(int)(features.length);
     model.setNumObFeatures(numObFeatures);
 
@@ -59,19 +66,17 @@ int main() {
 	// 0.13986013986013984, 0.13986013986013984, 0.13986013986013984, 0.013986013986013986, 
 	// 0.006993006993006993, 0.0, 0.2797202797202797, 0.0, 0.0, 0.2797202797202797];
 	// reward_weights[] = params_pip_sortingModelbyPSuresh4multipleInit_onlyPIP[]; 
-	// double[] trueWeights = reward_weights; 
 
 	int dim = 6;
     reward = new Boyd2RewardGroupedFeatures(model);
     double [6] reward_weights = [1, 0, 0, 0, 0.75, 0];
-
 
     model.setReward(reward);
 	reward.setParams(reward_weights);
     model.setGamma(0.99);
 
 	// threshold for value iteration
-	double VI_threshold = 0.2; 
+	double VI_threshold = 0.1; 
 	// time bound for value iteration
 	int vi_duration_thresh_secs = 30; 
 	TimedValueIteration vi = new TimedValueIteration(int.max,false,vi_duration_thresh_secs); 
@@ -95,7 +100,7 @@ int main() {
 	}
 	debug {
 		foreach(i;0..3){
-			//writeln(simulate(model, policy, initial, 15));
+			writeln(simulate(model, policy, initial, 15));
 			;
 		}
 	}
@@ -253,6 +258,7 @@ int main() {
 	ulong QSolve_max_iter = 100LU, int max_iter_lbfgs = 100, double error_lbfgs = 1.0e-5)	
 	*/
 	bool use_frequentist_baseline = true;
+	double[] trueWeights = reward_weights; 
 	string base_dir = "/home/katy/Desktop/Results_RI2RL/";
 
 	MaxEntUnknownObsModRobustIRL robustIRLUknowObsMod = new MaxEntUnknownObsModRobustIRL(restart_attempts, 
@@ -327,22 +333,23 @@ int main() {
 
 		//////////////////// IRL under noisy Obs //////////////////// 
 
-		writeln("calling MaxEntIrlZiebartApproxNoisyObs.solve");
 		debug {
 
-			// //writeln("verify if any s-a pair is not present in keys of obs model associative array.");
+			// writeln("verify if any s-a pair is not present in keys of obsModel associative array.");
 			// foreach(s;model.S()) {
 			// 	foreach(a;model.A(s)) {
 			// 		StateAction gtsa = new StateAction(s,a);
 			// 		auto mem = (gtsa in obsModel);
+            //         // writeln("1");
 			// 		if (mem is null) {
-			// 			//writeln("s-a ",gtsa," not present ");
+			// 			writeln("s-a ",gtsa," not present ");
 			// 		} else {
-			// 			foreach(os;model.S()) {
-			// 				foreach(oa;model.A(os)){
+			// 			foreach(os;model.S()) { 
+			// 				foreach(oa;model.A(os)){ 
+            //                     // writeln("2");
 			// 					StateAction obsa = new StateAction(os,oa);
 			// 					auto mem2 = (obsa in obsModel[gtsa]);
-			// 				//	if (mem2 is null) writeln("s-a ",obsa," not present returnedObModel[gtsa] ");
+			// 					if (mem2 is null) writeln("s-a ",obsa," not present returnedObModel[gtsa] ");
 			// 				//	if ((os==new sortingState([0, 2, 3, 0 ])) && 
 			// 				//		(oa==new ClaimNewOnion())) 
 			// 				//		writeln(" [0, 2, 3, 0 ] - ClaimNewOnion found for key ",gtsa);
@@ -351,9 +358,33 @@ int main() {
 			// 		}
 			// 	}
 			// }
+			// writeln("verify again if any s-a pair is not present in keys of model.obsMod associative array.");
+			// foreach(s;model.S()) {
+			// 	foreach(a;model.A(s)) {
+			// 		StateAction gtsa = new StateAction(s,a);
+			// 		auto mem = (gtsa in model.getObsMod());
+            //         // writeln(gtsa);
+			// 		if (mem is null) {
+			// 			writeln("s-a ",gtsa," not present ");
+			// 		} else {
+			// 			foreach(os;model.S()) { 
+			// 				foreach(oa;model.A(os)){ 
+            //                     // writeln("2");
+			// 					StateAction obsa = new StateAction(os,oa);
+			// 					auto mem2 = (obsa in model.getObsMod()[gtsa]);
+			// 					if (mem2 is null) writeln("s-a ",obsa," not present returnedObModel[gtsa] ");
+			// 				//	if ((os==new sortingState([0, 2, 3, 0 ])) && 
+			// 				//		(oa==new ClaimNewOnion())) 
+			// 				//		writeln(" [0, 2, 3, 0 ] - ClaimNewOnion found for key ",gtsa);
+			// 				}
+			// 			}
+			// 		}
+			// 	}
+			// }
+    		// exit(0);
 		}
-		//exit(0);
 
+		writeln("calling MaxEntIrlZiebartApproxNoisyObs.solve");
 		policy = robustIRLUknowObsMod.solve(model, initial, obs_trajs, max_sample_length, 
 			lastWeights, last_val, foundWeightsGlbl, featureExpecExpert, num_Trajsofar, 
 			Ephi_thresh, gradient_descent_step_size, descent_duration_thresh_secs,
@@ -415,28 +446,8 @@ int main() {
 	foreach (State s; model.S()) {
 		foreach (Action a, double chance; policy.actions(s)) {
 
-            sortingState ps = cast(sortingState)s;
-            //writeln( ps.toString(), " = ", a);
-            string str_s="";
-			if (ps._onion_location == 0) str_s=str_s~"Onconveyor,";
-			if (ps._onion_location == 1) str_s=str_s~"Infront,";
-			if (ps._onion_location == 2) str_s=str_s~"Inbin,";
-			if (ps._onion_location == 3) str_s=str_s~"Picked/AtHomePose,";
-			if (ps._onion_location == 4) str_s=str_s~"Placed,";
-
-			if (ps._prediction == 0) str_s=str_s~"bad,";
-			if (ps._prediction == 1) str_s=str_s~"good,";
-			if (ps._prediction == 2) str_s=str_s~"unknown,";
-
-			if (ps._EE_location == 0) str_s=str_s~"Onconveyor,";
-			if (ps._EE_location == 1) str_s=str_s~"Infront,";
-			if (ps._EE_location == 2) str_s=str_s~"Inbin,";
-			if (ps._EE_location == 3) str_s=str_s~"Picked/AtHomePose,";
-
-			if (ps._listIDs_status == 0) str_s=str_s~"Empty";
-			if (ps._listIDs_status == 1) str_s=str_s~"NotEmpty"; 
-			if (ps._listIDs_status == 2) str_s=str_s~"Unavailable";
-
+            BoydState ps = cast(BoydState)s;
+            writeln( ps.toString(), " = ", a);
             //writeln(str_s," = ", a);
 
 		}
@@ -480,8 +491,6 @@ int main() {
 	debug {
 	}
 	
-	delete reward_weights;
-	delete params_pip_sortingModelbyPSuresh4multipleInit_onlyPIP;
 	delete trueWeights;
 	foreach (key, value; V) V.remove(key);
 
